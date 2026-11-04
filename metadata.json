@@ -1,0 +1,6 @@
+{
+  "name": "SiteScope",
+  "description": "Full website crawler & audit tool with Core Web Vitals, SEO, accessibility, Google Search Console & Analytics integration, and AI content assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,31 @@
+package com.example
+
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import com.example.model.ScoreGrade
+import org.junit.Assert.assertEquals
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [36])
+class ExampleRobolectricTest {
+
+    @Test
+    fun `read string from context`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val appName = context.getString(R.string.app_name)
+        assertEquals("SiteScope", appName)
+    }
+
+    @Test
+    fun `verify score grade calculation`() {
+        assertEquals(ScoreGrade.EXCELLENT, ScoreGrade.fromScore(95))
+        assertEquals(ScoreGrade.GOOD, ScoreGrade.fromScore(82))
+        assertEquals(ScoreGrade.FAIR, ScoreGrade.fromScore(71))
+        assertEquals(ScoreGrade.POOR, ScoreGrade.fromScore(55))
+        assertEquals(ScoreGrade.CRITICAL, ScoreGrade.fromScore(40))
+    }
+}
