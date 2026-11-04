@@ -166,11 +166,24 @@ fun TrafficScreen(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold
                         )
-                        Text(
-                            text = "Avg Time: ${metrics.avgDurationSeconds}s",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                    }
+
+                    if (!isConnected) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFF1F5F9))
+                                .padding(10.dp)
+                        ) {
+                            Text(
+                                text = "Honesty Notice: Real traffic and click numbers require connecting Google Search Console / GA4. Without a verified connection, SiteScope classifies findings as 'possible issues' based on HTML structure rather than assuming low performance.",
+                                fontSize = 11.sp,
+                                color = Color(0xFF475569),
+                                lineHeight = 15.sp
+                            )
+                        }
                     }
                 }
             }

@@ -1,22 +1,19 @@
 package com.example.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,6 +60,7 @@ fun PageDetailScreen(
                         text = page.path,
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
                         maxLines = 1
                     )
                 }
@@ -82,7 +80,70 @@ fun PageDetailScreen(
             }
         }
 
-        // 2. Core Web Vitals Card
+        // 2. Real Downloaded Element Breakdown (User Requirement)
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Real Elements Parsed from Live HTML",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        SpecChip(label = "Images Found", value = "${page.imagesCount}")
+                        SpecChip(label = "Links Found", value = "${page.linksCount}")
+                        SpecChip(label = "Buttons Found", value = "${page.buttonsCount}")
+                        SpecChip(label = "Videos / Embeds", value = "${page.videosCount}")
+                    }
+
+                    if (page.videosCount >= 2) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(ScoreColors.CriticalRedBg)
+                                .padding(10.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.Top) {
+                                Icon(
+                                    Icons.Default.Videocam,
+                                    contentDescription = null,
+                                    tint = ScoreColors.CriticalRed,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "${page.videosCount} Video Embeds on this page!",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF991B1B)
+                                    )
+                                    Text(
+                                        text = "Direct iframe embeds load hundreds of kilobytes of player scripts on first load. Recommended: use click-to-play thumbnail facades (lite-youtube-embed) to slash initial page weight.",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFFB91C1C),
+                                        lineHeight = 15.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Core Web Vitals & Real Speed Data
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -100,11 +161,16 @@ fun PageDetailScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Core Web Vitals & Real Speed",
+                            text = "Real Speed Telemetry",
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
                         )
                     }
+                    Text(
+                        text = page.speedSource,
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Row(
@@ -136,63 +202,16 @@ fun PageDetailScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.PhoneAndroid, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Mobile Score: ${page.coreWebVitals.mobileScore}/100",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Laptop, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Desktop Score: ${page.coreWebVitals.desktopScore}/100",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // 3. SEO & Content Quick Metrics
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Page Specs & Health",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        SpecChip(label = "Word Count", value = "${page.wordCount} words")
-                        SpecChip(label = "Reading Ease", value = "${page.readabilityEase}/100")
-                        SpecChip(label = "Level", value = page.readabilityGrade.split(" ")[0])
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        SpecChip(label = "Primary CTA", value = page.primaryCtaText ?: "None")
-                        SpecChip(label = "H1 Heading", value = if (page.hasSingleH1) "1 (Optimal)" else "Missing/Multi")
-                        SpecChip(label = "Missing Alt", value = "${page.missingAltCount} images")
+                        Text(
+                            text = "Mobile Speed: ${page.coreWebVitals.mobileScore}/100",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "Desktop Speed: ${page.coreWebVitals.desktopScore}/100",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }
@@ -202,9 +221,7 @@ fun PageDetailScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF0F172A)
-                ),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -318,10 +335,10 @@ fun PageDetailScreen(
             }
         }
 
-        // 5. Detected Page Issues
+        // 5. Detected Page Issues with Exact Element Proof (Rule #2)
         item {
             Text(
-                text = "Detected Issues on this Page (${page.issues.size})",
+                text = "Provable Findings on this Page (${page.issues.size})",
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = MaterialTheme.colorScheme.onSurface
@@ -339,7 +356,7 @@ fun PageDetailScreen(
                         Icon(Icons.Default.CheckCircle, contentDescription = null, tint = ScoreColors.GoodGreen)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "No critical issues detected on this page!",
+                            text = "0 element issues detected! HTML structure and elements are verified clean.",
                             color = Color(0xFF065F46),
                             fontWeight = FontWeight.SemiBold
                         )
@@ -373,6 +390,32 @@ fun PageDetailScreen(
                                 fontSize = 11.sp
                             )
                         }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+                        // Exact Element Proof Box
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFFF1F5F9))
+                                .padding(8.dp)
+                        ) {
+                            Column {
+                                Text(
+                                    text = "ELEMENT PROOF:",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF475569)
+                                )
+                                Text(
+                                    text = issue.exactElementProof,
+                                    fontSize = 11.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = Color(0xFF0F172A)
+                                )
+                            }
+                        }
+
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = issue.whatIsWrong,
@@ -404,7 +447,6 @@ fun AiAnalysisResultsView(
     onReAnalyze: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        // Readability & Tone summary box
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -446,7 +488,6 @@ fun AiAnalysisResultsView(
             }
         }
 
-        // Sentence Rewrites
         if (analysis.sentenceRewrites.isNotEmpty()) {
             Text(
                 text = "AI Sentence Rewrites (Plain English):",
@@ -503,7 +544,6 @@ fun AiAnalysisResultsView(
             }
         }
 
-        // High Converting CTA Recommendations
         if (analysis.ctaEnhancements.isNotEmpty()) {
             Text(
                 text = "Stronger Calls to Action (CTAs):",
@@ -558,7 +598,6 @@ fun AiAnalysisResultsView(
             }
         }
 
-        // Keywords Suggestions
         if (analysis.keywordSuggestions.isNotEmpty()) {
             Text(
                 text = "Keyword Opportunities:",
@@ -660,6 +699,7 @@ fun SpecChip(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(text = label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(text = value, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Text(text = value, fontSize = 13.sp, fontWeight = FontWeight.Bold)
     }
 }
+

@@ -155,6 +155,7 @@ fun SiteScopeApp(
                             targetUrlInput = targetUrlInput,
                             onUrlChange = { viewModel.setTargetUrlInput(it) },
                             onRunAudit = { viewModel.runAudit(it) },
+                            onRunSelfTest = { viewModel.runSelfTest() },
                             onReScan = { viewModel.reScanCurrentWebsite() },
                             onNavigateTab = { viewModel.selectTab(it) },
                             onCopySnippet = { snippet -> viewModel.copyToClipboard("Fix Snippet", snippet) }

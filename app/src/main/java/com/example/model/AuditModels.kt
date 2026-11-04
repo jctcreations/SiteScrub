@@ -49,7 +49,8 @@ enum class PageTrafficStatus(val label: String) {
     HIGH_TRAFFIC_LOW_SCORE("High Traffic, Low Score"),
     STAR_PERFORMER("Star Performer"),
     HIDDEN_GEM("Hidden Gem"),
-    IGNORED_PAGE("Ignored / Zero Clicks")
+    IGNORED_PAGE("Ignored / Zero Clicks"),
+    UNVERIFIED("Possible Issue (Traffic Unverified)")
 }
 
 data class CoreWebVitals(
@@ -57,7 +58,8 @@ data class CoreWebVitals(
     val clsScore: Double,
     val inpMs: Int,
     val mobileScore: Int,
-    val desktopScore: Int
+    val desktopScore: Int,
+    val sourceDescription: String = "Direct Live Network Timing"
 ) {
     val lcpStatus: String
         get() = when {
@@ -81,18 +83,25 @@ data class CoreWebVitals(
         }
 }
 
+/**
+ * Provable issue tied to an exact element in the downloaded HTML.
+ * Rule #2: If the app can't point to the specific element with proof, it must NOT report it.
+ */
 data class AuditIssue(
     val id: String,
     val title: String,
     val category: AuditCategory,
     val severity: IssueSeverity,
+    val pageUrl: String,
+    val exactElementProof: String, // Exact HTML element or src/href (e.g. <img src="/images/banner.jpg"> or Button "Printables" -> /printables)
+    val elementLocationContext: String, // Context (e.g. Section: "Free classroom resources" / Line in HTML)
     val whatIsWrong: String,
     val whyItMatters: String,
     val exactFix: String,
     val codeSnippet: String? = null,
     val impact: ImpactLevel = ImpactLevel.MEDIUM,
     val effort: EffortLevel = EffortLevel.LOW,
-    val pageUrl: String? = null
+    val isAnalyticsVerified: Boolean = false // Only call "low-performing" if GA/GSC verified; otherwise "possible issue"
 )
 
 data class AuditFix(
@@ -102,18 +111,22 @@ data class AuditFix(
     val category: AuditCategory,
     val impact: ImpactLevel,
     val effort: EffortLevel,
+    val pageUrl: String,
+    val exactElementProof: String,
+    val elementLocationContext: String,
     val whatIsWrong: String,
     val whyItMatters: String,
     val exactFix: String,
     val codeSnippet: String? = null,
-    val affectedUrl: String = "/"
+    val isAnalyticsVerified: Boolean = false
 )
 
 data class WorkingAspect(
     val title: String,
     val description: String,
     val category: AuditCategory,
-    val benefit: String
+    val benefit: String,
+    val exactProof: String
 )
 
 data class PageAudit(
@@ -129,6 +142,13 @@ data class PageAudit(
     val uxScore: Int,
     val a11yScore: Int,
     val techScore: Int,
+    // Real element counts on the downloaded page
+    val imagesCount: Int,
+    val linksCount: Int,
+    val buttonsCount: Int,
+    val videosCount: Int,
+    val heavyEmbedsCount: Int,
+    val speedSource: String,
     val wordCount: Int,
     val readabilityEase: Int,
     val readabilityGrade: String,
@@ -138,7 +158,6 @@ data class PageAudit(
     val hasMetaDescription: Boolean,
     val hasSingleH1: Boolean,
     val missingAltCount: Int,
-    val brokenLinksCount: Int,
     val isHttps: Boolean,
     val isIndexed: Boolean,
     val coreWebVitals: CoreWebVitals,
@@ -211,11 +230,17 @@ data class AuditResult(
     val techScore: Int,
     val crawledPagesCount: Int,
     val totalDiscoveredCount: Int,
+    val totalImagesFound: Int,
+    val totalLinksFound: Int,
+    val totalButtonsFound: Int,
+    val totalVideosFound: Int,
     val hasRobotsTxt: Boolean,
     val hasSitemap: Boolean,
     val isHttps: Boolean,
+    val isSelfTest: Boolean = false,
     val pages: List<PageAudit>,
     val topFixes: List<AuditFix>,
+    val totalRealIssuesCount: Int,
     val whatsWorking: List<WorkingAspect>,
     val gscGaMetrics: GscGaMetrics
 )
@@ -227,20 +252,4 @@ data class CrawlProgress(
     val totalDiscovered: Int = 0,
     val statusMessage: String = "",
     val progressPercent: Float = 0f
-)
-
-data class HistoryScanItem(
-    val id: Long,
-    val rootUrl: String,
-    val timestamp: Long,
-    val overallScore: Int,
-    val speedScore: Int,
-    val seoScore: Int,
-    val contentScore: Int,
-    val uxScore: Int,
-    val a11yScore: Int,
-    val techScore: Int,
-    val pageCount: Int,
-    val criticalIssuesCount: Int,
-    val scoreDelta: Int? = null
 )

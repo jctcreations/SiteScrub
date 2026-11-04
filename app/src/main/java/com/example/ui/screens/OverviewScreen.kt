@@ -2,13 +2,11 @@ package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -41,6 +39,7 @@ fun OverviewScreen(
     targetUrlInput: String,
     onUrlChange: (String) -> Unit,
     onRunAudit: (String) -> Unit,
+    onRunSelfTest: () -> Unit,
     onReScan: () -> Unit,
     onNavigateTab: (AppNavTab) -> Unit,
     onCopySnippet: (String) -> Unit,
@@ -49,10 +48,9 @@ fun OverviewScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     val presetWebsites = listOf(
+        "jctcreations.com" to "Picture Books (Anti-Bullying)",
         "novacloud.io" to "SaaS Platform",
-        "artisancafebakery.com" to "Local Bakery",
-        "techinsightspress.org" to "News / Blog",
-        "nordiclivinghome.shop" to "E-commerce"
+        "techinsightspress.org" to "News / Blog"
     )
 
     LazyColumn(
@@ -71,18 +69,33 @@ fun OverviewScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    Text(
-                        text = "Enter Website to Crawl & Audit",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Live Website Audit (Rule #2 Enforced)",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        // Self-test trigger chip
+                        AssistChip(
+                            onClick = onRunSelfTest,
+                            label = { Text("Self-Test Mode", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                            leadingIcon = {
+                                Icon(Icons.Default.BugReport, contentDescription = null, modifier = Modifier.size(14.dp), tint = ScoreColors.AccentTeal)
+                            }
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(10.dp))
                     OutlinedTextField(
                         value = targetUrlInput,
                         onValueChange = onUrlChange,
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("example.com or https://...") },
+                        placeholder = { Text("jctcreations.com or https://...") },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Language,
@@ -128,7 +141,7 @@ fun OverviewScreen(
                         ) {
                             Icon(Icons.Default.Radar, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(if (crawlProgress.isCrawling) "Crawling..." else "Audit Website")
+                            Text(if (crawlProgress.isCrawling) "Crawling Live..." else "Audit Live Site")
                         }
 
                         if (currentAudit != null) {
@@ -146,7 +159,7 @@ fun OverviewScreen(
 
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "Or test popular profiles:",
+                        text = "Quick Presets:",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -211,7 +224,7 @@ fun OverviewScreen(
                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                             )
                             Text(
-                                text = "${crawlProgress.pagesScanned} / ${crawlProgress.totalDiscovered} pages",
+                                text = "${crawlProgress.pagesScanned} pages scanned",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -255,30 +268,43 @@ fun OverviewScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            // GSC connection status badge
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(ScoreColors.GoodGreenBg)
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    .clickable { onNavigateTab(AppNavTab.TRAFFIC) }
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Default.Analytics,
-                                        contentDescription = null,
-                                        tint = ScoreColors.GoodGreen,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
+                            if (currentAudit.isSelfTest) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(Color(0xFFFEF3C7))
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
                                     Text(
-                                        text = "GSC Synced",
-                                        color = ScoreColors.GoodGreen,
+                                        text = "Self-Test Suite",
+                                        color = Color(0xFFB45309),
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Real Element Inventory Summary
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFFF8FAFC))
+                                .padding(vertical = 8.dp, horizontal = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            ElementStat(count = currentAudit.totalImagesFound, label = "Images")
+                            ElementStat(count = currentAudit.totalLinksFound, label = "Links")
+                            ElementStat(count = currentAudit.totalButtonsFound, label = "Buttons")
+                            ElementStat(
+                                count = currentAudit.totalVideosFound,
+                                label = "Videos",
+                                alert = currentAudit.totalVideosFound >= 2
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -288,9 +314,9 @@ fun OverviewScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         val summaryText = when {
-                            currentAudit.overallScore >= 85 -> "Great health! Only a few quick polish items remain."
-                            currentAudit.overallScore >= 70 -> "Good foundation, but high-impact quick wins are available."
-                            else -> "Action needed: Critical issues are hurting ranking and mobile conversion."
+                            currentAudit.totalRealIssuesCount == 0 -> "Clean bill of health! Zero provable element issues detected."
+                            currentAudit.totalRealIssuesCount < 5 -> "Found only ${currentAudit.totalRealIssuesCount} real issue(s) with exact HTML element proof."
+                            else -> "Found ${currentAudit.totalRealIssuesCount} verified issues across live HTML."
                         }
                         Text(
                             text = summaryText,
@@ -346,7 +372,12 @@ fun OverviewScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Top Fixes (Impact vs Effort)",
+                                    text = if (currentAudit.totalRealIssuesCount < 5 && currentAudit.totalRealIssuesCount > 0)
+                                        "Only ${currentAudit.totalRealIssuesCount} Real Issue(s) Found"
+                                    else if (currentAudit.totalRealIssuesCount == 0)
+                                        "0 Real Issues Found"
+                                    else
+                                        "Top 5 Proven Fixes",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp
                                 )
@@ -360,12 +391,19 @@ fun OverviewScreen(
                             val topFix = currentAudit.topFixes.first()
                             Spacer(modifier = Modifier.height(8.dp))
                             FixCard(fix = topFix, onCopySnippet = onCopySnippet)
+                        } else {
+                            Text(
+                                text = "Zero element defects detected. Great job!",
+                                fontSize = 13.sp,
+                                color = ScoreColors.GoodGreen,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
                 }
             }
 
-            // 6. What's Working Section (Celebrate good practices!)
+            // 6. What's Working Section (Celebrate good practices with verified proof!)
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -383,7 +421,7 @@ fun OverviewScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "What's Working (Keep Doing This!)",
+                                text = "What's Working (Verified Proof)",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp,
                                 color = Color(0xFF065F46)
@@ -417,6 +455,12 @@ fun OverviewScreen(
                                         fontSize = 12.sp,
                                         color = Color(0xFF047857)
                                     )
+                                    Text(
+                                        text = "Proof: ${item.exactProof}",
+                                        fontSize = 10.sp,
+                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                        color = Color(0xFF065F46)
+                                    )
                                 }
                             }
                         }
@@ -424,5 +468,22 @@ fun OverviewScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ElementStat(count: Int, label: String, alert: Boolean = false) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = "$count",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = if (alert) ScoreColors.CriticalRed else MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }

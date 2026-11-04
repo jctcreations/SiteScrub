@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -20,7 +19,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.PageAudit
-import com.example.model.PageTrafficStatus
 import com.example.ui.PageFilter
 import com.example.ui.components.ScoreColors
 
@@ -42,9 +40,9 @@ fun PagesListScreen(
 
             val matchesFilter = when (currentFilter) {
                 PageFilter.ALL -> true
-                PageFilter.HIGH_TRAFFIC -> page.organicClicks > 3000
-                PageFilter.CRITICAL_ISSUES -> page.overallScore < 70 || page.issues.isNotEmpty()
-                PageFilter.IGNORED -> page.trafficStatus == PageTrafficStatus.IGNORED_PAGE || page.organicClicks < 500
+                PageFilter.HAS_VIDEOS -> page.videosCount > 0
+                PageFilter.NEEDS_FIXES -> page.issues.isNotEmpty()
+                PageFilter.HIGH_TRAFFIC -> page.organicClicks > 1000
             }
 
             matchesQuery && matchesFilter
@@ -61,14 +59,14 @@ fun PagesListScreen(
         item {
             Column {
                 Text(
-                    text = "Crawled Pages Report",
+                    text = "Live Scanned Pages Inventory",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "Individual page health, speed, and real search traffic metrics.",
-                    fontSize = 13.sp,
+                    text = "Real element counts parsed from live downloaded HTML: images, links, buttons, and videos.",
+                    fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -77,7 +75,7 @@ fun PagesListScreen(
                     value = searchQuery,
                     onValueChange = onSearchChange,
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search by URL path or title...") },
+                    placeholder = { Text("Search by path (e.g. /book or /reviews)...") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     trailingIcon = {
                         if (searchQuery.isNotBlank()) {
@@ -106,7 +104,7 @@ fun PagesListScreen(
 
         item {
             Text(
-                text = "Showing ${filteredPages.size} of ${pages.size} pages",
+                text = "Showing ${filteredPages.size} of ${pages.size} scanned pages",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary
@@ -134,7 +132,7 @@ fun PagesListScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No pages matching your filter or search query.",
+                            text = "No pages matching your filter.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -178,6 +176,7 @@ fun PageAuditCard(
                         text = page.path,
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
                         maxLines = 1
                     )
                 }
@@ -201,50 +200,95 @@ fun PageAuditCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Badges row: Speed, Traffic status, and Issues
+            // Real Element Inventory Row (User requirement)
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFF8FAFC))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Traffic status chip
-                val (statusBg, statusTextColor) = when (page.trafficStatus) {
-                    PageTrafficStatus.HIGH_TRAFFIC_LOW_SCORE -> ScoreColors.CriticalRedBg to ScoreColors.CriticalRed
-                    PageTrafficStatus.STAR_PERFORMER -> ScoreColors.GoodGreenBg to ScoreColors.GoodGreen
-                    PageTrafficStatus.HIDDEN_GEM -> Color(0xFFEFF6FF) to Color(0xFF2563EB)
-                    PageTrafficStatus.IGNORED_PAGE -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
-                }
+                ElementPill(icon = Icons.Default.Image, label = "${page.imagesCount} imgs", alert = page.missingAltCount > 0)
+                ElementPill(icon = Icons.Default.Link, label = "${page.linksCount} links", alert = false)
+                ElementPill(icon = Icons.Default.SmartButton, label = "${page.buttonsCount} btns", alert = false)
+                ElementPill(
+                    icon = Icons.Default.Videocam,
+                    label = "${page.videosCount} vids",
+                    alert = page.videosCount >= 2,
+                    highlight = page.videosCount > 0
+                )
+            }
 
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(statusBg)
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = page.trafficStatus.label,
-                        color = statusTextColor,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+            Spacer(modifier = Modifier.height(8.dp))
 
-                // Clicks
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = "${page.organicClicks} clicks/mo",
+                    text = "Load time: ${page.loadTimeMs}ms",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Spacer(modifier = Modifier.weight(1f))
-
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "Details",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
-                )
+                if (page.issues.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(ScoreColors.WarningYellowBg)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "${page.issues.size} proven issue(s)",
+                            color = ScoreColors.WarningYellow,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(ScoreColors.GoodGreenBg)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "0 element issues",
+                            color = ScoreColors.GoodGreen,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+fun ElementPill(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    alert: Boolean = false,
+    highlight: Boolean = false
+) {
+    val tint = when {
+        alert -> ScoreColors.CriticalRed
+        highlight -> ScoreColors.AccentTeal
+        else -> Color(0xFF64748B)
+    }
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(imageVector = icon, contentDescription = null, tint = tint, modifier = Modifier.size(14.dp))
+        Spacer(modifier = Modifier.width(3.dp))
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            fontWeight = if (highlight || alert) FontWeight.Bold else FontWeight.Normal,
+            color = if (alert) ScoreColors.CriticalRed else Color(0xFF334155)
+        )
     }
 }

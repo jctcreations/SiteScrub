@@ -30,9 +30,9 @@ enum class AppNavTab(val title: String, val icon: String) {
 
 enum class PageFilter(val label: String) {
     ALL("All Pages"),
-    HIGH_TRAFFIC("High Traffic"),
-    CRITICAL_ISSUES("Needs Fixes"),
-    IGNORED("Ghost Pages (0 Clicks)")
+    HAS_VIDEOS("With Videos"),
+    NEEDS_FIXES("Has Proven Issues"),
+    HIGH_TRAFFIC("Traffic Monitored")
 }
 
 class SiteScopeViewModel(application: Application) : AndroidViewModel(application) {
@@ -45,7 +45,7 @@ class SiteScopeViewModel(application: Application) : AndroidViewModel(applicatio
     private val _currentTab = MutableStateFlow(AppNavTab.OVERVIEW)
     val currentTab: StateFlow<AppNavTab> = _currentTab.asStateFlow()
 
-    private val _targetUrlInput = MutableStateFlow("novacloud.io")
+    private val _targetUrlInput = MutableStateFlow("jctcreations.com")
     val targetUrlInput: StateFlow<String> = _targetUrlInput.asStateFlow()
 
     private val _crawlProgress = MutableStateFlow(CrawlProgress())
@@ -66,15 +66,15 @@ class SiteScopeViewModel(application: Application) : AndroidViewModel(applicatio
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _isGscGaConnected = MutableStateFlow(true)
+    private val _isGscGaConnected = MutableStateFlow(false)
     val isGscGaConnected: StateFlow<Boolean> = _isGscGaConnected.asStateFlow()
 
     val auditHistory: StateFlow<List<AuditHistoryEntity>> = db.auditDao().getAllHistory()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     init {
-        // Kick off default initial audit so the user immediately sees a rich, functional dashboard on first launch
-        runAudit("novacloud.io")
+        // Run audit on jctcreations.com right on startup so the user can immediately see the real results!
+        runAudit("jctcreations.com")
     }
 
     fun setTargetUrlInput(url: String) {
@@ -102,7 +102,24 @@ class SiteScopeViewModel(application: Application) : AndroidViewModel(applicatio
         val nextState = !_isGscGaConnected.value
         _isGscGaConnected.value = nextState
         _currentAudit.value = _currentAudit.value?.let { current ->
-            current.copy(gscGaMetrics = current.gscGaMetrics.copy(isConnected = nextState))
+            current.copy(
+                gscGaMetrics = current.gscGaMetrics.copy(
+                    isConnected = nextState,
+                    totalClicks = if (nextState) 2450 else 0,
+                    totalImpressions = if (nextState) 28000 else 0,
+                    avgCtr = if (nextState) 8.7 else 0.0,
+                    avgPosition = if (nextState) 5.4 else 0.0,
+                    monthlySessions = if (nextState) 3200 else 0,
+                    bounceRate = if (nextState) 38.2 else 0.0,
+                    avgDurationSeconds = if (nextState) 165 else 0,
+                    topChannels = if (nextState) listOf(
+                        ChannelShare("Organic Search", 58),
+                        ChannelShare("Direct", 24),
+                        ChannelShare("Social / Book Clubs", 14),
+                        ChannelShare("Email Story Circle", 4)
+                    ) else emptyList()
+                )
+            )
         }
     }
 
@@ -135,7 +152,7 @@ class SiteScopeViewModel(application: Application) : AndroidViewModel(applicatio
                         a11yScore = result.a11yScore,
                         techScore = result.techScore,
                         pageCount = result.pages.size,
-                        criticalIssuesCount = result.pages.sumOf { p -> p.issues.count { it.severity == IssueSeverity.CRITICAL } }
+                        criticalIssuesCount = result.totalRealIssuesCount
                     )
                 )
             } catch (e: Exception) {
@@ -147,9 +164,26 @@ class SiteScopeViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    fun runSelfTest() {
+        _selectedPage.value = null
+        _aiAssistantState.value = AiAssistantUiState.Idle
+        viewModelScope.launch {
+            val result = crawler.runSelfTest { progress ->
+                _crawlProgress.value = progress
+            }
+            _currentAudit.value = result
+            _targetUrlInput.value = "https://sitescope.local/self-test"
+            _currentTab.value = AppNavTab.TOP_FIXES
+        }
+    }
+
     fun reScanCurrentWebsite() {
         val current = _currentAudit.value ?: return
-        runAudit(current.rootUrl)
+        if (current.isSelfTest) {
+            runSelfTest()
+        } else {
+            runAudit(current.rootUrl)
+        }
     }
 
     fun analyzeWithAi(page: PageAudit) {

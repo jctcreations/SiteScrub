@@ -3,7 +3,6 @@ package com.example.ui.components
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -19,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -199,9 +197,14 @@ fun CategoryScoreBar(
 fun ImpactEffortChips(
     impact: ImpactLevel,
     effort: EffortLevel,
+    isAnalyticsVerified: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         val impactBg = when (impact) {
             ImpactLevel.HIGH -> ScoreColors.CriticalRedBg
             ImpactLevel.MEDIUM -> ScoreColors.WarningYellowBg
@@ -241,6 +244,27 @@ fun ImpactEffortChips(
                 color = effortColor,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        // Honesty badge
+        val (verBg, verText, verLabel) = if (isAnalyticsVerified) {
+            Triple(ScoreColors.GoodGreenBg, ScoreColors.GoodGreen, "GA/GSC Verified")
+        } else {
+            Triple(Color(0xFFF1F5F9), Color(0xFF64748B), "Possible Issue (Unlinked)")
+        }
+
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(6.dp))
+                .background(verBg)
+                .padding(horizontal = 6.dp, vertical = 3.dp)
+        ) {
+            Text(
+                text = verLabel,
+                color = verText,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
             )
         }
     }
@@ -312,7 +336,7 @@ fun FixCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
                             .size(26.dp)
@@ -337,8 +361,54 @@ fun FixCard(
                 }
             }
 
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "Page: ${fix.pageUrl}",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
+            )
+
             Spacer(modifier = Modifier.height(8.dp))
-            ImpactEffortChips(impact = fix.impact, effort = fix.effort)
+            ImpactEffortChips(
+                impact = fix.impact,
+                effort = fix.effort,
+                isAnalyticsVerified = fix.isAnalyticsVerified
+            )
+
+            // Exact Element Proof Box (Rule #2)
+            Spacer(modifier = Modifier.height(10.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFF8FAFC))
+                    .padding(8.dp)
+            ) {
+                Column {
+                    Text(
+                        text = "VERIFIED ELEMENT PROOF",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color(0xFF475569)
+                    )
+                    Text(
+                        text = fix.exactElementProof,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = Color(0xFF0F172A),
+                        fontWeight = FontWeight.Medium
+                    )
+                    if (fix.elementLocationContext.isNotBlank()) {
+                        Text(
+                            text = "Context: ${fix.elementLocationContext}",
+                            fontSize = 10.sp,
+                            color = Color(0xFF64748B),
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
             // What's wrong

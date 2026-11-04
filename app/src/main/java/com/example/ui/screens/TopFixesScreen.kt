@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,6 +50,8 @@ fun TopFixesScreen(
         }
     }
 
+    val realCount = currentAudit.totalRealIssuesCount
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -68,7 +71,12 @@ fun TopFixesScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Prioritized Action Plan",
+                        text = if (realCount < 5 && realCount > 0)
+                            "Only $realCount real issue(s) found"
+                        else if (realCount == 0)
+                            "0 real issues found"
+                        else
+                            "Top 5 Fixes (Ranked by Impact)",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -76,16 +84,47 @@ fun TopFixesScreen(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Ranked strictly by Impact vs. Effort in plain English. Start with Quick Wins to boost score fast.",
-                    fontSize = 13.sp,
+                    text = "Rule #2 enforced: Every finding includes exact element proof from live downloaded HTML. No guessing or filler issues.",
+                    fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
+        // Real vs Guessed banner
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Verified,
+                        contentDescription = null,
+                        tint = ScoreColors.AccentTeal,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (realCount < 5)
+                            "Honest Reporting: Only $realCount provable issue(s) exist across ${currentAudit.crawledPagesCount} pages."
+                        else
+                            "Showing top 5 prioritized issues out of $realCount provable findings.",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF334155)
+                    )
+                }
+            }
+        }
+
         // Quick filter chips
         item {
-            val filters = listOf("All", "Quick Wins", "High Impact", "SEO", "Speed", "Accessibility", "Content")
+            val filters = listOf("All", "Quick Wins", "High Impact", "Content", "Speed", "SEO", "Accessibility")
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(filters) { f ->
                     FilterChip(
@@ -95,16 +134,6 @@ fun TopFixesScreen(
                     )
                 }
             }
-        }
-
-        // Fixes count indicator
-        item {
-            Text(
-                text = "${filteredFixes.size} recommended action(s)",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
         }
 
         // List of FixCards
@@ -133,7 +162,10 @@ fun TopFixesScreen(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "No fixes matching '$selectedFilter'. Everything looks solid!",
+                            text = if (realCount == 0)
+                                "No issues found! The scanned pages adhere to best practices with zero element defects."
+                            else
+                                "No fixes matching '$selectedFilter'.",
                             color = Color(0xFF065F46),
                             fontWeight = FontWeight.SemiBold
                         )
