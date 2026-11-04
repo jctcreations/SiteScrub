@@ -38,7 +38,7 @@ enum class PageFilter(val label: String) {
 class SiteScopeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val db = AuditDatabase.getDatabase(application)
-    private val crawler = WebsiteCrawler()
+    private val crawler = WebsiteCrawler(application)
     private val aiAssistant = AiContentAssistant()
 
     // Navigation and UI state
